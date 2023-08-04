@@ -1,5 +1,5 @@
-# Evaluation of Robustness of Disc/Cup Segmentation in Different Fundus Imaging Conditions
-This repository contains the code and resources for the ARVO abstract from OPHAI (supervised by Dr. Mohammad Eslami and Dr. Tobias Elze). Instructions for reproducing results and using this repository are below. All files for training, evaluating, and plotting are located in the parent directory. The code for all models we used are in `/models`. The code for data loading, metrics, and loss functions can be found in `/utils`.
+# OPHAI SegLoc - Segmentation Code
+This repository contains the code and resources for the segmentation models in the SegLoc paper from OPHAI (supervised by Dr. Mohammad Eslami and Dr. Tobias Elze). Instructions for reproducing results and using this repository are below. All files for training, evaluating, and plotting are located in the parent directory. The code for all models we used are in `/models`. The code for data loading, metrics, and loss functions can be found in `/utils`.
 
 # Training a model
 To use one of the models in the `/models` directory, pass in the filename of the file with the code for that model along with the other required arguments to `main_train.py`.
@@ -69,6 +69,3 @@ optional arguments:
 
 # Figures and statistics
 To recreate the figures in the abstract, run `main_create_summary_results.py` and then run `main_plots.py`. To obtain the data for the table, run `main_stats.py`.
-
-# Notes
-- The abstract only uses the UNet++, DeepLabV3+, and CE-Net model architectures. Others, specifically AttNet and MNet, may not work as expected at the moment.
