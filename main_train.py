@@ -1,7 +1,7 @@
 import argparse
 
 parser = argparse.ArgumentParser(description='Train model.')
-parser.add_argument('--model-name', help='Name of model to train.', choices=['attnet', 'cenet', 'deeplabv3plus', 'doubleunet', 'mnet', 'mobilenet_unet', 'resnet_unet', 'resunet', 'unet', 'unetpp'], required=True)
+parser.add_argument('--model-name', help='Name of model to train.', choices=['attnet', 'cenet', 'deeplabv3plus', 'doubleunet', 'mnet', 'mobilenet_unet', 'resnet_unet', 'resunet', 'unet', 'unetpp', 'sam'], required=True)
 parser.add_argument('--name-csv-train', help='Name of the CSV file with training dataset information.', required=True)
 parser.add_argument('--data-dir', help='Path to the folder with the CSV files and image subfolders.', required=True)
 parser.add_argument('--path-save', help='Path to the folder where model will be saved.', required=True)
@@ -26,6 +26,7 @@ from models.resnet_unet import ResNetUnet
 from models.resunet import ResUnet
 from models.unet import Unet
 from models.unetpp import UnetPlusPlus
+from models.sam import SAM
 
 from utils.data_utils import *
 
@@ -52,16 +53,21 @@ model = {
     'resnet_unet': ResNetUnet,
     'resunet': ResUnet,
     'unet': Unet,
-    'unetpp': UnetPlusPlus
+    'unetpp': UnetPlusPlus,
+    'sam': SAM
 }[args.model_name]((img_size[0],img_size[1],3), 2 if args.binary==1 else 3) # only important for unet models, SOTA models have their own size/n_channels and this will be disregarded
 
-torch_models = ['cenet']
+torch_models = ['cenet', 'sam']
 polar_models = [] # ['mnet']
 
 val_size=0.1
-train_gen, val_gen, _ = get_gens(img_size, train_paths, [], args.batch_size, val_size=val_size, binary=args.binary==1, polar=(args.model_name in polar_models), channelsFirst=(args.model_name in torch_models))
 train_len = int(len(train_paths)*(1-val_size))
 val_len = len(train_paths) - train_len
+
+if args.model_name != 'sam':
+    train_gen, val_gen, _ = get_gens(img_size, train_paths, [], args.batch_size, val_size=val_size, binary=args.binary==1, polar=(args.model_name in polar_models), channelsFirst=(args.model_name in torch_models))
+else:
+    train_gen, val_gen = train_paths[:train_len], train_paths[train_len:]
 
 # # models needing extra config
 # if args.model_name == 'attnet':

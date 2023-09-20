@@ -10,6 +10,19 @@ from tensorflow.keras.preprocessing import image
 import cv2
 from scipy.ndimage import binary_fill_holes
 from tensorflow.keras import backend as K
+from torch.utils.data import Dataset
+from monai.transforms import (
+    EnsureChannelFirstd,
+    Compose,
+    LoadImaged,
+    CenterSpatialCropd,
+    Orientationd,
+    CenterSpatialCropd,
+    SpatialPadd,
+    ScaleIntensityRanged,
+    Spacingd
+)
+
 
 def cf(img):
     return np.moveaxis(img, -1, 0)
@@ -126,3 +139,66 @@ def BW_img(input, thresholding):
         idx_max = np.argmax(area_list)
         binary[label_image != idx_max + 1] = 0
     return binary_fill_holes(np.asarray(binary).astype(int))
+
+# META SAM UTILS #
+
+def get_bounding_box(ground_truth_map, img_size):
+    if len(np.unique(ground_truth_map)) > 1:
+        y_indices, x_indices = np.where(ground_truth_map > 0)
+        x_min, x_max = np.min(x_indices), np.max(x_indices)
+        y_min, y_max = np.min(y_indices), np.max(y_indices)
+
+        H, W = ground_truth_map.shape
+        x_min = max(0, x_min - np.random.randint(5, 20))
+        x_max = min(W, x_max + np.random.randint(5, 20))
+        y_min = max(0, y_min - np.random.randint(5, 20))
+        y_max = min(H, y_max + np.random.randint(5, 20))
+
+        bbox = [x_min, y_min, x_max, y_max]
+        return bbox
+    else:
+        return [0, 0, img_size, img_size]
+
+class SAMDataset(Dataset):
+    def __init__(self, image_paths, mask_paths, processor):
+
+        self.image_paths = image_paths
+        self.mask_paths = mask_paths
+        self.processor = processor
+        self.transforms = transforms = Compose([
+            LoadImaged(keys=['img', 'label']),
+            EnsureChannelFirstd(keys=['img', 'label']),
+            Orientationd(keys=['img', 'label'], axcodes='RA'),
+            Spacingd(keys=['img', 'label'], pixdim=(1.5, 1.5), mode=("bilinear", "nearest")),
+            CenterSpatialCropd(keys=['img', 'label'], roi_size=(256,256)),
+            ScaleIntensityRanged(keys=['img'], a_min=-1000, a_max=2000,
+                         b_min=0.0, b_max=255.0, clip=True),
+            ScaleIntensityRanged(keys=['label'], a_min=0, a_max=255,
+                         b_min=0.0, b_max=1.0, clip=True),
+            SpatialPadd(keys=["img", "label"], spatial_size=(256,256))
+        ])
+
+    def __len__(self):
+        return len(self.image_paths)
+
+    def __getitem__(self, idx):
+        image_path = self.image_paths[idx]
+        mask_path = self.mask_paths[idx]
+
+        data_dict = self.transforms({'img': image_path, 'label': mask_path})
+
+        image = data_dict['img'].squeeze()
+        ground_truth_mask = data_dict['label'].squeeze()
+
+        image = image.astype(np.uint8)
+        image_rgb = Image.fromarray(image.transpose(1, 2, 0))
+        
+        ground_truth_mask[ground_truth_mask < 0] = 1
+
+        prompt = get_bounding_box(ground_truth_mask)
+
+        inputs = self.processor(image_rgb, input_boxes=[[prompt]], return_tensors="pt")
+        inputs = {k: v.squeeze(0) for k, v in inputs.items()}
+        inputs["ground_truth_mask"] = torch.from_numpy(ground_truth_mask.astype(np.int8))
+
+        return inputs

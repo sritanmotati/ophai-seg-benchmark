@@ -1,7 +1,7 @@
 import argparse
 
 parser = argparse.ArgumentParser(description='Test model.')
-parser.add_argument('--model-name', help='Name of model to train.', choices=['attnet', 'cenet', 'deeplabv3plus', 'doubleunet', 'mnet', 'mobilenet_unet', 'resnet_unet', 'resunet', 'unet', 'unetpp'])
+parser.add_argument('--model-name', help='Name of model to train.', choices=['attnet', 'cenet', 'deeplabv3plus', 'doubleunet', 'mnet', 'mobilenet_unet', 'resnet_unet', 'resunet', 'unet', 'unetpp', 'sam'])
 parser.add_argument('--name-csv-test', help='Name of the CSV file with testing dataset information.', required=True)
 parser.add_argument('--data-dir', help='Path to the folder with the CSV files and image subfolders.', required=True)
 parser.add_argument('--path-model', help='Path to the saved model.', required=True)
@@ -47,6 +47,7 @@ from models.resnet_unet import ResNetUnet
 from models.resunet import ResUnet
 from models.unet import Unet
 from models.unetpp import UnetPlusPlus
+from models.sam import SAM
 
 from utils.data_utils import *
 
@@ -67,14 +68,20 @@ model = {
     'resnet_unet': ResNetUnet,
     'resunet': ResUnet,
     'unet': Unet,
-    'unetpp': UnetPlusPlus
+    'unetpp': UnetPlusPlus,
+    'sam': SAM
 }[args.model_name]((img_size[0],img_size[1],3), n_classes) # only important for unet models, SOTA models have their own size/n_channels and this will be disregarded
 
-torch_models = ['cenet']
+torch_models = ['cenet', 'sam']
 polar_models = [] # ['mnet']
 
 val_size=0.1
-_, _, test_gen = get_gens(img_size, [], test_paths, args.batch_size, val_size=val_size, binary=args.binary==1, polar=(args.model_name in polar_models), channelsFirst=(args.model_name in torch_models))
+
+if args.model_name != 'sam':
+    _, _, test_gen = get_gens(img_size, [], test_paths, args.batch_size, val_size=val_size, binary=args.binary==1, polar=(args.model_name in polar_models), channelsFirst=(args.model_name in torch_models))
+else:
+    test_gen = test_paths
+
 test_len = len(test_paths)
 
 model.load(args.path_model)
