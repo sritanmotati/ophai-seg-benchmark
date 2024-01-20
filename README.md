@@ -67,5 +67,28 @@ optional arguments:
                         multi-class (False).
 ```
 
+# Run model inference on an image
+To save the segmentation mask prediction of a saved model on one image, use `main_inference.py`.
+
+```
+usage: main_inference.py [-h] [--model-name {attnet,cenet,deeplabv3plus,doubleunet,mnet,mobilenet_unet,resnet_unet,resunet,unet,unetpp,sam}] --image-path
+                         IMAGE_PATH --mask-path MASK_PATH --path-model PATH_MODEL --img-size IMG_SIZE [--binary BINARY]
+
+Model inference.
+
+options:
+  -h, --help            show this help message and exit
+  --model-name {attnet,cenet,deeplabv3plus,doubleunet,mnet,mobilenet_unet,resnet_unet,resunet,unet,unetpp,sam}
+                        Name of model to train.
+  --image-path IMAGE_PATH
+                        Path to fundus image.
+  --mask-path MASK_PATH
+                        Path to file location where the mask will be saved.
+  --path-model PATH_MODEL
+                        Path to the saved model.
+  --img-size IMG_SIZE   Size to which the images should be reshaped (one number, i.e. 256 or 512).
+  --binary BINARY       Whether the segmentation masks are binary (True) or multi-class (False).
+```
+
 # Figures and statistics
 To recreate the figures in the abstract, run `main_create_summary_results.py` and then run `main_plots.py`. To obtain the data for the table, run `main_stats.py`.
