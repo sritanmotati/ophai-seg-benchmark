@@ -3,3 +3,5 @@ csv_results_summary.csv
 table_stats.txt
 tabletext.py
 figures
+models/__pycache___/
+utils/__pycache___/

@@ -50,6 +50,19 @@ def crop_disc(img, mask):
     mask = mask[t-(buf if t>buf else t):b+(buf if end(b,0)>buf else mask.shape[0]-1), l-(buf if l>buf else l):r+(buf if end(r,1)>buf else mask.shape[1]-1)]
     return img, mask
 
+def process_img(x,img_size,crop=False,channelsFirst=False,binary=False,polar=False):
+    img = io.imread(x)
+    # check if img (width,height) != img_size
+    if img.shape[0] != img_size[0] or img.shape[1] != img_size[1]:
+        img = resize(img, img_size)
+    if polar:
+        SHAPE = img_size[0]
+        img = rotate(cv2.linearPolar(img, (SHAPE / 2, SHAPE / 2), SHAPE / 2, cv2.INTER_NEAREST + cv2.WARP_FILL_OUTLIERS), -90)*255.
+    if channelsFirst:
+        img = cf(img)
+    img = img.astype(np.float32)/255.
+    return img
+
 def process_pair(x,y,img_size,crop=False,channelsFirst=False,binary=False,polar=False):
     img = io.imread(x)
     mask = io.imread(y)
